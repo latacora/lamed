@@ -1,6 +1,14 @@
 # ﬥ [lamed]
 
-Clojure native-image lambdas.
+Clojure native-image Lambdas.
+
+Clojure has multiple ways of targeting AWS Lambda. The simplest and most common
+is to use JVM support directly. This performs fine except for the long warmup
+times that might be unacceptable for applications that get called very rarely
+(e.g. webhooks). Alternatively, you could use ClojureScript. That works, but
+generally limits your library choice and may mean rewriting parts of your
+application. This project provides a third option: compile your Clojure (JVM)
+application to a custom Lambda runtime using GraalVM's native-image.
 
 ## Installation
 
@@ -18,21 +26,18 @@ Run the project's tests (they'll fail until you edit them):
 
     $ clj -A:test:runner
 
-## Options
+## Usage
 
-FIXME: listing of options this app accepts.
+### High level integration
 
-## Examples
+You provide a fn, we call it with a Lambda event already parsed to a Clojure
+map, you return a Lambda response map, we translate it back into Lambda.
 
-...
+### Wrapping a [RequestStreamHandler][rsh]
 
-### Bugs
+This is a convenience method for wrapping existing Lambda implementations.
 
-...
-
-### Any Other Sections
-### That You Think
-### Might be Useful
+[rsh]: https://github.com/aws/aws-lambda-java-libs/blob/master/aws-lambda-java-core/src/main/java/com/amazonaws/services/lambda/runtime/RequestStreamHandler.java
 
 ## License
 
