@@ -4,11 +4,7 @@
         cheshire {:mvn/version "5.10.0"}
         com.amazonaws/aws-lambda-java-core {:mvn/version "1.2.0"}}
  :aliases
- {:test {:extra-paths ["test"]
-         :extra-deps {org.clojure/test.check {:mvn/version "RELEASE"}}}
-  :runner
-  {:extra-deps {com.cognitect/test-runner
-                {:git/url "https://github.com/cognitect-labs/test-runner"
-                 :sha "76568540e7f40268ad2b646110f237a60295fa3c"}}
-   :main-opts ["-m" "cognitect.test-runner"
-               "-d" "test"]}}}
+ {:test {:main-opts ["-m" "kaocha.runner"]
+         :extra-paths ["test-resources" "test"]
+         :extra-deps {lambdaisland/kaocha {:mvn/version "0.0-529"}
+                      com.taoensso/timbre {:mvn/version "4.10.0"}}}}}

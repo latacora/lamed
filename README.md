@@ -24,7 +24,7 @@ Run the project directly:
 
 Run the project's tests (they'll fail until you edit them):
 
-    $ clj -A:test:runner
+    $ clj -A:test
 
 ## Usage
 
