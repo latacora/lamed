@@ -1,10 +1,13 @@
 (ns com.latacora.lamed
   (:require
    [cheshire.core :as json]
+   [taoensso.timbre :as log]
    [clj-http.lite.client :as http])
   (:gen-class))
 
-(def ^:private env (into {} (System/getenv)))
+(delay
+  (def ^:private env (into {} (System/getenv))))
+
 
 (defn ^:private request
   [{::keys [path] :as request}]
