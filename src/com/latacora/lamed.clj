@@ -27,7 +27,8 @@
      ::invoked-function-arn (headers "lambda-runtime-invoked-function-arn")
      ::deadline-ms (Long/parseLong (headers "lambda-runtime-deadline-ms"))
      ::trace-id (headers "lambda-runtime-trace-id")
-     ::body (json/decode body keyword)}))
+     ::headers headers
+     ::body body}))
 
 (defn ^:private init-error!
   "Reports an initialization error to the Lambda API."
