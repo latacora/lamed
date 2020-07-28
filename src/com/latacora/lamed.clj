@@ -1,10 +1,13 @@
 (ns com.latacora.lamed
   (:require
    [cheshire.core :as json]
+   [taoensso.timbre :as log]
    [clj-http.lite.client :as http])
   (:gen-class))
 
-(def ^:private env (into {} (System/getenv)))
+(delay
+  (def ^:private env (into {} (System/getenv))))
+
 
 (defn ^:private request
   [{::keys [path] :as request}]
@@ -24,7 +27,8 @@
      ::invoked-function-arn (headers "lambda-runtime-invoked-function-arn")
      ::deadline-ms (Long/parseLong (headers "lambda-runtime-deadline-ms"))
      ::trace-id (headers "lambda-runtime-trace-id")
-     ::body (json/decode body keyword)}))
+     ::headers headers
+     ::body body}))
 
 (defn ^:private init-error!
   "Reports an initialization error to the Lambda API."
