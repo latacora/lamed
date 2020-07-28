@@ -21,25 +21,6 @@
             ::l/path "/runtime/invocation/next"
             :url "http://127.0.0.1/runtime/invocation/next"}]})
 
-(def first-ctx
-  #::l{:request-id request-id
-       :invoked-function-arn lambda-arn
-       :deadline-ms deadline-ms
-       :trace-id trace-id
-       :body (-> "example-lambda-request.json"
-                 io/resource
-                 io/reader
-                 (json/decode-stream keyword))})
-
-;; potential headers:
-;; * Lambda-Runtime-Aws-Request-Id – The request ID, which identifies the request that triggered the function invocation. For example, 8476a536-e9f4-11e8-9739-2dfe598c3fcd.
-;; * Lambda-Runtime-Deadline-Ms – The date that the function times out in Unix time milliseconds. For example, 1542409706888.
-;; * Lambda-Runtime-Invoked-Function-Arn – The ARN of the Lambda function, version, or alias that's specified in the invocation. For example, arn:aws:lambda:us-east-2:123456789012:function:custom-runtime.
-;; * Lambda-Runtime-Trace-Id – The AWS X-Ray tracing header. For example, Root=1-5bef4de7-ad49b0e87f6ef6c87fc2e700;Parent=9a9197af755a6419;Sampled=1.
-;; * Lambda-Runtime-Client-Context – For invocations from the AWS Mobile SDK, data about the client application and device.
-;; * Lambda-Runtime-Cognito-Identity – For invocations from the AWS Mobile SDK, data about the Amazon Cognito identity provider.
-;; clj-http.lite.client deals with the case ambiguity in http by lowercasing all
-;; the headers
 
 (def request-id
   "8476a536-e9f4-11e8-9739-2dfe598c3fcd")
@@ -52,15 +33,36 @@
 
 (def lambda-arn
   "arn:aws:lambda:us-east-2:123456789012:function:custom-runtime")
+(def headers
+  {"lambda-runtime-aws-request-id" request-id
+   "lambda-runtime-deadline-ms" (str deadline-ms)
+   "lambda-runtime-invoked-function-arn" lambda-arn
+   "lambda-runtime-trace-id" trace-id})
 
+(def first-ctx
+  #::l{:request-id request-id
+       :invoked-function-arn lambda-arn
+       :deadline-ms deadline-ms
+       :trace-id trace-id
+       :headers headers
+       :body (-> "example-lambda-request.json"
+                 io/resource
+                 io/reader
+                 slurp)})
+
+;; potential headers:
+;; * Lambda-Runtime-Aws-Request-Id – The request ID, which identifies the request that triggered the function invocation. For example, 8476a536-e9f4-11e8-9739-2dfe598c3fcd.
+;; * Lambda-Runtime-Deadline-Ms – The date that the function times out in Unix time milliseconds. For example, 1542409706888.
+;; * Lambda-Runtime-Invoked-Function-Arn – The ARN of the Lambda function, version, or alias that's specified in the invocation. For example, arn:aws:lambda:us-east-2:123456789012:function:custom-runtime.
+;; * Lambda-Runtime-Trace-Id – The AWS X-Ray tracing header. For example, Root=1-5bef4de7-ad49b0e87f6ef6c87fc2e700;Parent=9a9197af755a6419;Sampled=1.
+;; * Lambda-Runtime-Client-Context – For invocations from the AWS Mobile SDK, data about the client application and device.
+;; * Lambda-Runtime-Cognito-Identity – For invocations from the AWS Mobile SDK, data about the Amazon Cognito identity provider.
+;; clj-http.lite.client deals with the case ambiguity in http by lowercasing all
+;; the headers
 (def http-responses
   {`http/request
    [{:status 200 ;; tktk?
-     :headers
-     {"lambda-runtime-aws-request-id" request-id
-      "lambda-runtime-deadline-ms" (str deadline-ms)
-      "lambda-runtime-trace-id" trace-id
-      "lambda-runtime-invoked-function-arn" lambda-arn}
+     :headers headers
      :body (-> "example-lambda-request.json" io/resource slurp)}]})
 
 (defn ^:private mock
