@@ -1,6 +1,7 @@
 (ns com.latacora.lamed
   (:require
    [cheshire.core :as json]
+   [byte-streams :as bs]
    [taoensso.timbre :as log]
    [clj-http.lite.client :as http])
   (:gen-class))
@@ -75,3 +76,23 @@
       (catch Exception e (invocation-error! ctx e)))
     ;; can't recur in `(finally ...)`, because that's not a tail position.
     (recur (next-invocation!))))
+
+(defn ctx->body-ins
+  [ctx]
+  (-> ctx
+      :body
+      bs/to-input-stream))
+
+(defn delegate-streams!
+  "Start acquiring Lambda invocations and passing them to the given handler."
+  [handler]
+  (loop [ctx (next-invocation!)
+         ins (ctx->body-ins ctx)]
+    (try
+      (with-open [ous (java.io.ByteArrayOutputStream)]
+        (handler ins ous ctx)
+        (invocation-response! ctx (.toByteArray ous)))
+      (catch Exception e (invocation-error! ctx e)))
+    ;; can't recur in `(finally ...)`, because that's not a tail position.
+    (recur (next-invocation!) (ctx->body-ins ctx))))
+
