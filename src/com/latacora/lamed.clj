@@ -6,13 +6,11 @@
    [clj-http.lite.client :as http])
   (:gen-class))
 
-(delay
-  (def ^:private env (into {} (System/getenv))))
-
+(def ^:private env (delay (into {} (System/getenv))))
 
 (defn ^:private request
   [{::keys [path] :as request}]
-  (let [api (env "AWS_LAMBDA_RUNTIME_API")
+  (let [api (@env "AWS_LAMBDA_RUNTIME_API")
         url (str "http://" api path)]
     (-> request
         (assoc :url url)
@@ -65,7 +63,7 @@
   ;; handler), I think we don't care about LAMBDA_TASK_ROOT because it'll
   ;; already be our cwd, so I think it's safe to ignore these?
   (let [env-keys ["_HANDLER" "LAMBDA_TASK_ROOT" "AWS_LAMBDA_RUNTIME_API"]]
-    (select-keys env env-keys)))
+    (select-keys @env env-keys)))
 
 (defn delegate!
   "Start acquiring Lambda invocations and passing them to the given handler."
