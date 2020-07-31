@@ -11,7 +11,7 @@
 (defn ^:private request
   [{::keys [path] :as request}]
   (let [api (@env "AWS_LAMBDA_RUNTIME_API")
-        url (str "http://" api path)]
+        url (str "http://" api "/2018-06-01" path)]
     (-> request
         (assoc :url url)
         (http/request))))
@@ -50,6 +50,7 @@
 (defn ^:private invocation-error!
   "Reports an invocation error to the Lambda API."
   [{::keys [request-id]} e]
+  (log/spy e)
   (request
    {:method "POST"
     ::path (format "/runtime/invocation/%s/error" request-id)
@@ -65,29 +66,19 @@
   (let [env-keys ["_HANDLER" "LAMBDA_TASK_ROOT" "AWS_LAMBDA_RUNTIME_API"]]
     (select-keys @env env-keys)))
 
-(defn delegate!
-  "Start acquiring Lambda invocations and passing them to the given handler."
-  [handler]
-  (loop [ctx (next-invocation!)]
-    (try
-      (invocation-response! ctx (handler ctx))
-      (catch Exception e (invocation-error! ctx e)))
-    ;; can't recur in `(finally ...)`, because that's not a tail position.
-    (recur (next-invocation!))))
-
 (defn ctx->body-ins
   [ctx]
   (-> ctx
-      :body
+      ::body
       bs/to-input-stream))
 
-(defn delegate-streams!
+(defn delegate!
   "Start acquiring Lambda invocations and passing them to the given handler."
   [handler]
   (loop [ctx (next-invocation!)
          ins (ctx->body-ins ctx)]
     (try
-      (with-open [ous (java.io.ByteArrayOutputStream)]
+      (with-open [ous (java.io.ByteArrayOutputStream.)]
         (handler ins ous ctx)
         (invocation-response! ctx (.toByteArray ous)))
       (catch Exception e (invocation-error! ctx e)))
