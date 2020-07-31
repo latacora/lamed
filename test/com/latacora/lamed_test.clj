@@ -15,11 +15,13 @@
      "_HANDLER" "" ;; TODO
      "LAMBDA_TASK_ROOT" ""})) ;; TODO
 
-(def next-invocation-req
-  {::fn `http/request
-   ::args [{:method "GET"
-            ::l/path "/runtime/invocation/next"
-            :url "http://127.0.0.1/2018-06-01/runtime/invocation/next"}]})
+(def paths {
+            :next "/runtime/invocation/next"
+            :response "/runtime/invocation/%s/response"
+            :error "/runtime/invocation/%s/error"
+            })
+
+
 
 
 (def request-id
@@ -71,6 +73,24 @@
     (swap! events conj {::fn the-fn ::args args})
     (-> the-fn http-responses (nth n nil))))
 
+(def next-invocation-req
+  {::fn `http/request
+   ::args [{:method "GET"
+            ::l/path (:next paths)
+            :url "http://127.0.0.1/2018-06-01/runtime/invocation/next"}]})
+
+(defn generate-req-call
+  ([method path-type] (generate-req-call method path-type nil nil))
+  ([method path-type request-id body]
+   (let [path (format (path-type paths) request-id)]
+     {::fn `http/request
+      ::args [
+              (merge {:method method
+                      ::l/path path
+                      :url (str "http://127.0.0.1/2018-06-01" path)}
+                     (when body
+                       {:body body}))]})))
+
 (t/deftest next-invocation-tests
   (let [events (atom [])]
     (with-redefs
@@ -81,13 +101,19 @@
       (t/is (= first-ctx (#'l/next-invocation!)))
       (t/is (= next-invocation-req (last @events)))
 
+      (t/is (= (generate-req-call "GET" :next) (last @events)))
+
       ;; Simulate success
-      (let [body (json/encode {:my-result 1})
-            path (format "/runtime/invocation/%s/response" request-id)]
+
+      (let [body (json/encode {:my-result 1})]
         (#'l/invocation-response! first-ctx body)
-        (t/is (= {::fn `http/request
-                  ::args [{:method "POST"
-                           ::l/path path
-                           :url (str "http://127.0.0.1/2018-06-01" path)
-                           :body body}]}
-                 (last @events)))))))
+        (t/is (= (generate-req-call "POST" :response request-id body)
+                 (last @events))))
+
+      ;; Simulate error call
+      (let [error (Exception. "Something bad happened!")
+            body (str error)]
+        (#'l/invocation-error! first-ctx error )
+        (t/is (= (generate-req-call "POST" :error request-id body)
+                 (last @events))))
+      )))
