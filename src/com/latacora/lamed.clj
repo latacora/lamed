@@ -1,18 +1,17 @@
 (ns com.latacora.lamed
   (:require
    [cheshire.core :as json]
+   [byte-streams :as bs]
    [taoensso.timbre :as log]
    [clj-http.lite.client :as http])
   (:gen-class))
 
-(delay
-  (def ^:private env (into {} (System/getenv))))
-
+(def ^:private env (delay (into {} (System/getenv))))
 
 (defn ^:private request
   [{::keys [path] :as request}]
-  (let [api (env "AWS_LAMBDA_RUNTIME_API")
-        url (str "http://" api path)]
+  (let [api (@env "AWS_LAMBDA_RUNTIME_API")
+        url (str "http://" api "/2018-06-01" path)]
     (-> request
         (assoc :url url)
         (http/request))))
@@ -51,6 +50,7 @@
 (defn ^:private invocation-error!
   "Reports an invocation error to the Lambda API."
   [{::keys [request-id]} e]
+  (log/spy e)
   (request
    {:method "POST"
     ::path (format "/runtime/invocation/%s/error" request-id)
@@ -64,14 +64,24 @@
   ;; handler), I think we don't care about LAMBDA_TASK_ROOT because it'll
   ;; already be our cwd, so I think it's safe to ignore these?
   (let [env-keys ["_HANDLER" "LAMBDA_TASK_ROOT" "AWS_LAMBDA_RUNTIME_API"]]
-    (select-keys env env-keys)))
+    (select-keys @env env-keys)))
+
+(defn ctx->body-ins
+  [ctx]
+  (-> ctx
+      ::body
+      bs/to-input-stream))
 
 (defn delegate!
   "Start acquiring Lambda invocations and passing them to the given handler."
   [handler]
-  (loop [ctx (next-invocation!)]
+  (loop [ctx (next-invocation!)
+         ins (ctx->body-ins ctx)]
     (try
-      (invocation-response! ctx (handler ctx))
+      (with-open [ous (java.io.ByteArrayOutputStream.)]
+        (handler ins ous ctx)
+        (invocation-response! ctx (.toByteArray ous)))
       (catch Exception e (invocation-error! ctx e)))
     ;; can't recur in `(finally ...)`, because that's not a tail position.
-    (recur (next-invocation!))))
+    (recur (next-invocation!) (ctx->body-ins ctx))))
+

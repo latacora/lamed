@@ -3,7 +3,6 @@
    [clojure.test :as t]
    [com.latacora.lamed :as l]
    [clj-http.lite.client :as http]
-   [clojure.string :as str]
    [clojure.java.io :as io]
    [cheshire.core :as json]
    [taoensso.timbre :refer [spy]]))
@@ -11,15 +10,16 @@
 ;; https://docs.aws.amazon.com/lambda/latest/dg/runtimes-api.html
 
 (def fake-env
-  {"AWS_LAMBDA_RUNTIME_API" "127.0.0.1"
-   "_HANDLER" "" ;; TODO
-   "LAMBDA_TASK_ROOT" ""}) ;; TODO
+  (delay 
+    {"AWS_LAMBDA_RUNTIME_API" "127.0.0.1"
+     "_HANDLER" "" ;; TODO
+     "LAMBDA_TASK_ROOT" ""})) ;; TODO
 
 (def next-invocation-req
   {::fn `http/request
    ::args [{:method "GET"
             ::l/path "/runtime/invocation/next"
-            :url "http://127.0.0.1/runtime/invocation/next"}]})
+            :url "http://127.0.0.1/2018-06-01/runtime/invocation/next"}]})
 
 
 (def request-id
@@ -76,7 +76,6 @@
     (with-redefs
       [l/env fake-env
        http/request (fn [& args] (apply mock events `http/request args))]
-
       ;; Simulate getting an event
       (t/is (= [] @events))
       (t/is (= first-ctx (#'l/next-invocation!)))
@@ -89,6 +88,6 @@
         (t/is (= {::fn `http/request
                   ::args [{:method "POST"
                            ::l/path path
-                           :url (str "http://127.0.0.1" path)
+                           :url (str "http://127.0.0.1/2018-06-01" path)
                            :body body}]}
                  (last @events)))))))
