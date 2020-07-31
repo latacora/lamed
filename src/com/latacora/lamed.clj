@@ -50,7 +50,7 @@
 (defn ^:private invocation-error!
   "Reports an invocation error to the Lambda API."
   [{::keys [request-id]} e]
-  (log/spy e)
+  (log/error e)
   (request
    {:method "POST"
     ::path (format "/runtime/invocation/%s/error" request-id)
