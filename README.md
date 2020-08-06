@@ -10,6 +10,9 @@ generally limits your library choice and may mean rewriting parts of your
 application. This project provides a third option: compile your Clojure (JVM)
 application to a custom Lambda runtime using GraalVM's native-image.
 
+Sample app:
+https://github.com/latacora/lamed-sample-app
+
 ## Installation
 
 Download from http://example.com/FIXME.
