@@ -50,7 +50,7 @@
 (defn ^:private invocation-error!
   "Reports an invocation error to the Lambda API."
   [{::keys [request-id]} e]
-  (log/spy e)
+  (log/error e)
   (request
    {:method "POST"
     ::path (format "/runtime/invocation/%s/error" request-id)
@@ -75,13 +75,14 @@
 (defn delegate!
   "Start acquiring Lambda invocations and passing them to the given handler."
   [handler]
-  (loop [ctx (next-invocation!)
-         ins (ctx->body-ins ctx)]
-    (try
-      (with-open [ous (java.io.ByteArrayOutputStream.)]
-        (handler ins ous ctx)
-        (invocation-response! ctx (.toByteArray ous)))
-      (catch Exception e (invocation-error! ctx e)))
-    ;; can't recur in `(finally ...)`, because that's not a tail position.
-    (recur (next-invocation!) (ctx->body-ins ctx))))
+  (loop [ctx (next-invocation!)]
+    (let [ins (ctx->body-ins ctx)]
+      (try
+        (log/spy ctx)
+        (with-open [ous (java.io.ByteArrayOutputStream.)]
+          (handler ins ous ctx)
+          (invocation-response! ctx (.toByteArray ous)))
+        (catch Exception e (invocation-error! ctx e)))
+      ;; can't recur in `(finally ...)`, because that's not a tail position.
+      (recur (next-invocation!)))))
 
