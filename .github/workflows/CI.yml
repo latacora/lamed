@@ -18,9 +18,9 @@ jobs:
           java-version: 11
 
       - name: Setup Clojure
-        uses: DeLaGuardo/setup-clojure@e3ae95d31b43f7a2b85db4d368b42f52ff4aafef # 2.0 https://github.com/DeLaGuardo/setup-clojure/commit/e3ae95d31b43f7a2b85db4d368b42f52ff4aafef
+        uses: DeLaGuardo/setup-clojure@bc7570e912b028bbcc22f457adec7fdf98e2f4ed # 12.5 https://github.com/DeLaGuardo/setup-clojure/commit/bc7570e912b028bbcc22f457adec7fdf98e2f4ed
         with:
-          tools-deps: "latest"
+          cli: "latest"
 
       - name: Show Clojure env details
         run: clojure -Sdescribe
