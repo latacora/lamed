@@ -11,22 +11,22 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2 https://github.com/actions/checkout/commit/ee0669bd1cc54295c223e0bb666b733df41de1c5
 
-      - uses: actions/setup-java@v1
+      - uses: actions/setup-java@b6e674f4b717d7b0ae3baee0fbe79f498905dfde # v1 https://github.com/actions/setup-java/commit/b6e674f4b717d7b0ae3baee0fbe79f498905dfde
         with:
           java-version: 11
 
       - name: Setup Clojure
-        uses: DeLaGuardo/setup-clojure@2.0
+        uses: DeLaGuardo/setup-clojure@bc7570e912b028bbcc22f457adec7fdf98e2f4ed # 12.5 https://github.com/DeLaGuardo/setup-clojure/commit/bc7570e912b028bbcc22f457adec7fdf98e2f4ed
         with:
-          tools-deps: "latest"
+          cli: "latest"
 
       - name: Show Clojure env details
         run: clojure -Sdescribe
 
       - name: Lint with clj-kondo
-        uses: DeLaGuardo/clojure-lint-action@master
+        uses: DeLaGuardo/clojure-lint-action@2d6013175031096ae07bc9b90a07173029ad7dc9 # master https://github.com/DeLaGuardo/clojure-lint-action/commit/2d6013175031096ae07bc9b90a07173029ad7dc9
         with:
           clj-kondo-args: --lint src test
           version: '2020.04.05'
